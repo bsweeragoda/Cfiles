@@ -1,0 +1,73 @@
+HelloWorldClient.java ------------------
+
+import java.rmi.Naming;
+
+public class HelloWorldClient {
+    public static void main(String[] args) {
+        try {
+            HelloWorldInterface hello = (HelloWorldInterface) Naming.lookup("rmi://localhost/HelloWorld");
+            System.out.println(hello.sayHello());
+        } catch (Exception e) {
+            System.out.println("Client Exception: " + e);
+        }
+    }
+}
+
+
+
+HelloWorldImpl.java ---------------------
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+
+public class HelloWorldImpl extends UnicastRemoteObject implements HelloWorldInterface {
+    protected HelloWorldImpl() throws RemoteException {
+        super();
+    }
+    public String sayHello() throws RemoteException {
+        return "Hello, World!";
+    }
+}
+
+
+
+HelloWorldInterface.java ---------------
+
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface HelloWorldInterface extends Remote {
+    String sayHello() throws RemoteException;
+}
+
+
+HelloWorldServer.java -------------------
+
+
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class HelloWorldServer {
+    public static void main(String[] args) {
+        try {
+            HelloWorldInterface hello = new HelloWorldImpl();
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.bind("HelloWorld", hello);
+            System.out.println("Server is ready.");
+        } catch (Exception e) {
+            System.out.println("Server Exception: " + e);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+

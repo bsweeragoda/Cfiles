@@ -1,0 +1,226 @@
+B ---------------------------------  TCP 1
+TCPClient.java
+
+
+import java.io.*;
+import java.net.*;
+
+public class TCPClient {
+    public static void main(String[] args) {
+        String serverAddress = "localhost"; // server IP address
+        int port = 12345; // server port
+
+        try (Socket socket = new Socket(serverAddress, port);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            // Sending message to server
+            out.println("Hello Server!");
+            // Receiving message from server
+            String response = in.readLine();
+            System.out.println("Server: " + response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+} 
+
+
+TCPServer .java
+
+
+import java.io.*;
+import java.net.*;
+
+public class TCPServer {
+    public static void main(String[] args) {
+        int port = 12345; // server port
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server is listening on port " + port);
+            while (true) {
+                Socket socket = serverSocket.accept();
+                new ClientHandler(socket).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class ClientHandler extends Thread {
+    private Socket socket;
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+
+    public void run() {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+            String message = in.readLine();
+            System.out.println("Client: " + message);
+            out.println("Hello Client!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+B ------------------------------------------------ UDP 2
+
+UDPClient.java
+
+
+import java.net.*;
+
+public class UDPClient {
+    public static void main(String[] args) {
+        String serverAddress = "localhost"; // server IP address
+        int port = 12345; // server port
+
+        try (DatagramSocket socket = new DatagramSocket()) {
+            String message = "Hello Server!";
+            byte[] buffer = message.getBytes();
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(serverAddress), port);
+            socket.send(packet);
+
+            // Receiving response
+            byte[] responseBuffer = new byte[1024];
+            DatagramPacket responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length);
+            socket.receive(responsePacket);
+            String response = new String(responsePacket.getData(), 0, responsePacket.getLength());
+            System.out.println("Server: " + response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+UDPServer .java
+
+
+import java.net.*;
+
+public class UDPServer {
+    public static void main(String[] args) {
+        int port = 12345; // server port
+
+        try (DatagramSocket socket = new DatagramSocket(port)) {
+            System.out.println("Server is listening on port " + port);
+            while (true) {
+                byte[] buffer = new byte[1024];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("Client: " + message);
+
+                // Sending response back to client
+                String response = "Hello Client!";
+                byte[] responseBuffer = response.getBytes();
+                DatagramPacket responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length, packet.getAddress(), packet.getPort());
+                socket.send(responsePacket);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+
+
+ D-------------------------------------------------
+
+import java.io.*;
+import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
+
+public class PriceManagementServer {
+    private static Map<String, Double> priceMap = new HashMap<>();
+    private static Map<String, Double> discountMap = new HashMap<>();
+
+    static {
+        // Sample data
+        priceMap.put("item1", 100.0);
+        discountMap.put("item1", 10.0);
+        priceMap.put("item2", 200.0);
+        discountMap.put("item2", 20.0);
+    }
+
+    public static void main(String[] args) {
+        int port = 12345; // server port
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Price Management Server is listening on port " + port);
+            while (true) {
+                Socket socket = serverSocket.accept();
+                new PriceClientHandler(socket).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class PriceClientHandler extends Thread {
+    private Socket socket;
+
+    public PriceClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+
+    public void run() {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+
+            String itemCode = in.readLine();
+            Double initialPrice = PriceManagementServer.priceMap.get(itemCode);
+            Double discount = PriceManagementServer.discountMap.get(itemCode);
+            Double finalPrice = initialPrice - (initialPrice * (discount / 100));
+
+            if (initialPrice != null && discount != null) {
+                out.println("Initial Price: " + initialPrice);
+                out.println("Discount: " + discount);
+                out.println("Final Price: " + finalPrice);
+            } else {
+                out.println("Item not found.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+------------------------
+
+
+import java.io.*;
+import java.net.*;
+
+public class PriceManagementClient {
+    public static void main(String[] args) {
+        String serverAddress = "localhost"; // server IP address
+        int port = 12345; // server port
+
+        try (Socket socket = new Socket(serverAddress, port);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            // Sending item code to server
+            out.println("item1");
+            // Receiving response from server
+            String response;
+            while ((response = in.readLine()) != null) {
+                System.out.println(response);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
